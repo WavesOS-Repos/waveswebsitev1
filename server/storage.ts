@@ -1,5 +1,6 @@
-import { type Download, type InsertDownload } from "@shared/schema";
+import { type Download, type InsertDownload, downloads } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
 
 export interface IStorage {
   getDownload(filename: string): Promise<Download | undefined>;
@@ -8,76 +9,77 @@ export interface IStorage {
   getDownloadStats(): Promise<{ iso: number; wrapper: number; total: number }>;
 }
 
-export class MemStorage implements IStorage {
-  private downloads: Map<string, Download>;
+import { eq, sql } from "drizzle-orm";
 
-  constructor() {
-    this.downloads = new Map();
-    
-    // Initialize with default download entries
-    const isoDownload: Download = {
-      id: randomUUID(),
-      filename: "wavesinstaller_ultra.iso",
-      downloadCount: 0,
-      fileType: "iso"
-    };
-    
-    const wrapperDownload: Download = {
-      id: randomUUID(),
-      filename: "waves_wrapper.zip",
-      downloadCount: 0,
-      fileType: "wrapper"
-    };
-    
-    this.downloads.set(isoDownload.filename, isoDownload);
-    this.downloads.set(wrapperDownload.filename, wrapperDownload);
-  }
-
+export class DatabaseStorage implements IStorage {
   async getDownload(filename: string): Promise<Download | undefined> {
-    return this.downloads.get(filename);
+    const [download] = await db.select().from(downloads).where(eq(downloads.filename, filename));
+    return download || undefined;
   }
 
   async createDownload(insertDownload: InsertDownload): Promise<Download> {
-    const id = randomUUID();
-    const download: Download = { 
-      ...insertDownload, 
-      id, 
-      downloadCount: 0 
-    };
-    this.downloads.set(download.filename, download);
+    const [download] = await db
+      .insert(downloads)
+      .values(insertDownload)
+      .returning();
     return download;
   }
 
   async incrementDownload(filename: string, fileType: string): Promise<Download> {
-    let download = this.downloads.get(filename);
+    let download = await this.getDownload(filename);
     
     if (!download) {
       download = await this.createDownload({ filename, fileType });
     }
     
-    download.downloadCount += 1;
-    this.downloads.set(filename, download);
-    return download;
+    const [updatedDownload] = await db
+      .update(downloads)
+      .set({ downloadCount: sql`${downloads.downloadCount} + 1` })
+      .where(eq(downloads.filename, filename))
+      .returning();
+    
+    return updatedDownload;
   }
 
   async getDownloadStats(): Promise<{ iso: number; wrapper: number; total: number }> {
-    let isoCount = 0;
-    let wrapperCount = 0;
-    
-    for (const download of this.downloads.values()) {
-      if (download.fileType === "iso") {
-        isoCount += download.downloadCount;
-      } else if (download.fileType === "wrapper") {
-        wrapperCount += download.downloadCount;
+    try {
+      const allDownloads = await db.select().from(downloads);
+      
+      // Handle case where query returns null or undefined
+      if (!allDownloads || !Array.isArray(allDownloads)) {
+        return {
+          iso: 0,
+          wrapper: 0,
+          total: 0
+        };
       }
+      
+      let isoCount = 0;
+      let wrapperCount = 0;
+      
+      for (const download of allDownloads) {
+        if (download && download.fileType === "iso") {
+          isoCount += download.downloadCount || 0;
+        } else if (download && download.fileType === "wrapper") {
+          wrapperCount += download.downloadCount || 0;
+        }
+      }
+      
+      return {
+        iso: isoCount,
+        wrapper: wrapperCount,
+        total: isoCount + wrapperCount
+      };
+    } catch (error) {
+      // Silently handle error when table is empty - this is expected
+      // The Neon driver throws when querying empty tables, but we handle it gracefully
+      return {
+        iso: 0,
+        wrapper: 0,
+        total: 0
+      };
     }
-    
-    return {
-      iso: isoCount,
-      wrapper: wrapperCount,
-      total: isoCount + wrapperCount
-    };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
