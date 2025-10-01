@@ -101,8 +101,9 @@ export default function HeroSection() {
                     <img
                       key={i}
                       src="/logo.png"
-                      alt="WavesOS Logo"
+                      alt="WavesOS Logo - Next Generation Arch Linux Distribution"
                       className="absolute inset-0 w-full h-full object-contain"
+                      loading={i === 0 ? "eager" : "lazy"}
                       style={{
                         transform: `translateZ(${zPosition}px)`,
                         opacity: opacity,

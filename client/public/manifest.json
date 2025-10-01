@@ -1,0 +1,21 @@
+{
+  "name": "WavesOS - Next Generation Arch Linux Distribution",
+  "short_name": "WavesOS",
+  "description": "Experience the future of computing with WavesOS, our custom Arch-based Linux distribution. Engineered for performance, designed for the next generation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity", "development"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

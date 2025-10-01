@@ -16,8 +16,11 @@ export default function Footer() {
           <div className="flex flex-col items-center mb-4" data-testid="footer-logo">
             <img 
               src="/logo.png" 
-              alt="WavesOS Logo" 
+              alt="WavesOS Logo - Next Generation Computing" 
               className="w-32 h-32 object-contain mb-2"
+              loading="lazy"
+              width="128"
+              height="128"
             />
             <div className="font-orbitron font-bold text-2xl gradient-text">
               WavesOS

@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
-  <!-- Main homepage -->
   <url>
     <loc>https://wavesos.live/</loc>
-    <lastmod>2025-09-30</lastmod>
+    <lastmod>2025-10-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://wavesos.live/logo.png</image:loc>
+      <image:title>WavesOS Logo</image:title>
+      <image:caption>WavesOS - Next Generation Computing</image:caption>
+    </image:image>
   </url>
 
 </urlset>
