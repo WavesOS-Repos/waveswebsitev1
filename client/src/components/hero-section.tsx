@@ -26,18 +26,27 @@ export default function HeroSection() {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      // Only prevent default and update position when touching the logo itself
       e.preventDefault();
       if (e.touches.length > 0) {
         updatePosition(e.touches[0].clientX, e.touches[0].clientY);
       }
     };
 
+    // Mouse events on window for desktop (keeps working as before)
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    
+    // Touch events only on the logo element (not the entire window)
+    const logoElement = logoRef.current;
+    if (logoElement) {
+      logoElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+    }
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
+      if (logoElement) {
+        logoElement.removeEventListener('touchmove', handleTouchMove);
+      }
     };
   }, []);
 
