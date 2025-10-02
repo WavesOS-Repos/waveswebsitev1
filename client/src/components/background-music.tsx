@@ -10,15 +10,31 @@ export default function BackgroundMusic() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
-      audio.play().catch((error) => {
+    const playAudio = async () => {
+      try {
+        await audio.play();
+      } catch (error) {
         console.log("Autoplay prevented:", error);
         setIsPlaying(false);
-      });
+      }
+    };
+
+    if (isPlaying) {
+      playAudio();
     } else {
       audio.pause();
     }
   }, [isPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.play().catch((error) => {
+        console.log("Initial autoplay prevented:", error);
+        setIsPlaying(false);
+      });
+    }
+  }, []);
 
   const toggleMusic = () => {
     setIsPlaying(!isPlaying);
@@ -26,7 +42,7 @@ export default function BackgroundMusic() {
 
   return (
     <>
-      <audio ref={audioRef} loop>
+      <audio ref={audioRef} loop autoPlay>
         <source src="/sounds/bg_sound.mp3" type="audio/mpeg" />
       </audio>
       

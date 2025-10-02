@@ -186,9 +186,12 @@ export default function HeroSection() {
               variant="outline"
               className="border border-gray-600 px-8 py-4 rounded-lg font-semibold hover:border-purple-500 hover:text-purple-400 transition-all duration-300 bg-transparent"
               data-testid="hero-demo-button"
+              asChild
             >
-              <Play className="mr-2 w-4 h-4" />
-              Watch Demo
+              <a href="/demo/demo.mp4" target="_blank" rel="noopener noreferrer">
+                <Play className="mr-2 w-4 h-4" />
+                Watch Demo
+              </a>
             </Button>
           </div>
         </div>
