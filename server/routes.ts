@@ -22,8 +22,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "ISO file not found. Please place the ISO file in server/downloads/ folder." });
       }
 
-      // Track download statistics
-      await storage.incrementDownload(filename, "iso");
+      // Track download statistics (optional - won't fail if DB is not available)
+      try {
+        await storage.incrementDownload(filename, "iso");
+      } catch (err) {
+        console.log("Download stats tracking unavailable:", err instanceof Error ? err.message : String(err));
+      }
 
       // Set headers for file download
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -58,8 +62,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "ZIP file not found. Please place the ZIP file in server/downloads/ folder." });
       }
 
-      // Track download statistics
-      await storage.incrementDownload(filename, "wrapper");
+      // Track download statistics (optional - won't fail if DB is not available)
+      try {
+        await storage.incrementDownload(filename, "wrapper");
+      } catch (err) {
+        console.log("Download stats tracking unavailable:", err instanceof Error ? err.message : String(err));
+      }
 
       // Set headers for file download
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
