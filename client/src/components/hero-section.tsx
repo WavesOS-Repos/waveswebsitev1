@@ -4,9 +4,18 @@ import { useState, useEffect, useRef } from "react";
 
 export default function HeroSection() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const logoRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>();
 
   useEffect(() => {
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     const updatePosition = (clientX: number, clientY: number) => {
       if (logoRef.current) {
         const rect = logoRef.current.getBoundingClientRect();
@@ -22,14 +31,26 @@ export default function HeroSection() {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      updatePosition(e.clientX, e.clientY);
+      // Use requestAnimationFrame for smooth updates
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(() => {
+        updatePosition(e.clientX, e.clientY);
+      });
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       // Only prevent default and update position when touching the logo itself
       e.preventDefault();
       if (e.touches.length > 0) {
-        updatePosition(e.touches[0].clientX, e.touches[0].clientY);
+        // Throttle updates on mobile for better performance
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+        }
+        rafRef.current = requestAnimationFrame(() => {
+          updatePosition(e.touches[0].clientX, e.touches[0].clientY);
+        });
       }
     };
 
@@ -44,8 +65,12 @@ export default function HeroSection() {
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', checkMobile);
       if (logoElement) {
         logoElement.removeEventListener('touchmove', handleTouchMove);
+      }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
       }
     };
   }, []);
@@ -84,7 +109,7 @@ export default function HeroSection() {
                       transparent 100%
                     )
                   `,
-                  filter: 'blur(20px)',
+                  filter: isMobile ? 'blur(10px)' : 'blur(20px)',
                 }}
               />
               
@@ -94,17 +119,21 @@ export default function HeroSection() {
                   transform: `
                     rotateY(${mousePosition.x * 30}deg) 
                     rotateX(${-mousePosition.y * 30}deg)
+                    translate3d(0, 0, 0)
                   `,
                   transformStyle: 'preserve-3d',
                   transition: 'transform 0.1s ease-out',
+                  willChange: 'transform',
                 }}
               >
-                {/* Create multiple layers with equal spacing for true 3D depth */}
-                {Array.from({ length: 30 }, (_, i) => {
-                  const layerDepth = 30 - i; // Front layer at 30, back layer at 1
-                  const zPosition = layerDepth * 3; // Equal 3px spacing between layers
-                  const opacity = 0.7 + (layerDepth / 30) * 0.3; // Gradual opacity from back to front
-                  const brightness = 0.5 + (layerDepth / 30) * 0.5; // Gradual brightness from back to front
+                {/* Create multiple layers - fewer on mobile for performance */}
+                {Array.from({ length: isMobile ? 8 : 30 }, (_, i) => {
+                  const totalLayers = isMobile ? 8 : 30;
+                  const layerDepth = totalLayers - i;
+                  const zPosition = layerDepth * (isMobile ? 4 : 3);
+                  const opacity = 0.7 + (layerDepth / totalLayers) * 0.3;
+                  const brightness = 0.5 + (layerDepth / totalLayers) * 0.5;
+                  const isFrontLayer = layerDepth === totalLayers;
                   
                   return (
                     <img
@@ -116,17 +145,20 @@ export default function HeroSection() {
                       style={{
                         transform: `translateZ(${zPosition}px)`,
                         opacity: opacity,
-                        filter: `
-                          brightness(${brightness})
-                          hue-rotate(${(30 - layerDepth) * 6}deg)
-                          drop-shadow(0 0 ${10 + layerDepth}px rgba(147, 51, 234, ${0.1 + layerDepth * 0.01}))
-                          ${layerDepth === 30 ? `
-                            drop-shadow(${mousePosition.x * 12}px ${mousePosition.y * 12}px 25px rgba(147, 51, 234, 0.5))
-                            drop-shadow(${-mousePosition.x * 6}px ${-mousePosition.y * 6}px 15px rgba(59, 130, 246, 0.3))
-                            drop-shadow(0 0 30px rgba(34, 197, 94, 0.2))
-                            contrast(1.1)
-                          ` : ''}
-                        `,
+                        willChange: 'transform',
+                        filter: isMobile 
+                          ? // Simplified filters for mobile
+                            `brightness(${brightness})${isFrontLayer ? ' drop-shadow(0 0 15px rgba(147, 51, 234, 0.4))' : ''}`
+                          : // Full filters for desktop
+                            `brightness(${brightness})
+                             hue-rotate(${(totalLayers - layerDepth) * 6}deg)
+                             drop-shadow(0 0 ${10 + layerDepth}px rgba(147, 51, 234, ${0.1 + layerDepth * 0.01}))
+                             ${isFrontLayer ? `
+                               drop-shadow(${mousePosition.x * 12}px ${mousePosition.y * 12}px 25px rgba(147, 51, 234, 0.5))
+                               drop-shadow(${-mousePosition.x * 6}px ${-mousePosition.y * 6}px 15px rgba(59, 130, 246, 0.3))
+                               drop-shadow(0 0 30px rgba(34, 197, 94, 0.2))
+                               contrast(1.1)
+                             ` : ''}`,
                       }}
                     />
                   );
