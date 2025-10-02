@@ -29,10 +29,17 @@ export default function BackgroundMusic() {
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
-      audio.play().catch((error) => {
-        console.log("Initial autoplay prevented:", error);
-        setIsPlaying(false);
-      });
+      const attemptPlay = async () => {
+        try {
+          await audio.play();
+          setIsPlaying(true);
+        } catch (error) {
+          console.log("Initial autoplay prevented - user interaction required:", error);
+          setIsPlaying(false);
+        }
+      };
+      
+      attemptPlay();
     }
   }, []);
 
